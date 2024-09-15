@@ -1,5 +1,6 @@
-from tkinter import *
-from tkinter import font
+import tkinter as tk
+import time
+from typing import Callable
 from PIL import Image, ImageTk
 from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
 
@@ -34,86 +35,69 @@ def loadfont(fontpath, private=True, enumerable=False):
 
 
 
+class SignInterface(tk.Frame):
+    def __init__(self, root):
+        super().__init__(root, bg="WHITE")
+        self.main_frame = self
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.rowconfigure(0, weight=1)
+        self.create_items()
+    
+    def create_items(self):
+        self.label_gif1 = tk.Label(self.main_frame, bg="WHITE", border=0)
+        self.label_gif1.grid(column=0, row=0)
+        self.gif1_frames = self._get_frame(".//images//animated//tv_collect_pepp.webp")
+        root.after(100, self._play_gif, self.label_gif1, self.gif1_frames)
+        self.label_gif1.config(image=self.gif1_frames[4])
+        self.button = tk.Button(self.main_frame, text="Button", width=10, height=2)
+        self.button.grid(column=0, row=1)
+        
+    def _get_frame(self, img):
+        with Image.open(img) as gif:
+            index = 0
+            frames = []
+            while True:
+                try:
+                    gif.seek(index)
+                    frame = ImageTk.PhotoImage(gif)
+                    frames.append(frame)
+                except EOFError:
+                    break
+                index += 1
+            return frames
+    
+    def _play_gif(self, label, frames):
+        total_delay = 10
+        delay_frames = 50
+        for frame in frames:
+            root.after(total_delay, self._next_frame, frame, label, frames)
+            total_delay += delay_frames
+        root.after(total_delay, self._next_frame, frame, label, frames, True)
+    
+    def _next_frame(self, frame, label, frames, restart=False):
+        if restart:
+            root.after(1, self._play_gif, label, frames)
+            return
+        
+        label.config(image=frame)
+    
+    
+root = tk.Tk()
+root.title("Meme")
+root.geometry("1200x800")
+root.resizable(width=False, height=False)
 
-class TestLabel(Label):
-    def __init__(self, master, filename):
-        img = Image.open(filename)
-        seq = []
-        try:
-            while 1:
-                seq.append(img.copy())
-                img.seek(len(seq))
-        except EOFError:
-            pass
-        try:
-            self.delay = img.info['duration']
-        except KeyError:
-            self.delay = 100
-        first = seq[0].convert('RGBA')
-        self.frames = [ImageTk.PhotoImage(first)]
-        Label.__init__(self, master, image=self.frames[0])
+instance_of_app = SignInterface(root)
+root.mainloop()
         
-        temp = seq[0]
-        for image in seq[1:]:
-            temp.paste(image)
-            frame = temp.convert('RGBA')
-            self.frames.append(ImageTk.PhotoImage(frame))
-        self.idx = 0
-        self.cancel = self.after(self.delay, self.play)
-        
-    def play(self):
-        self.config(image=self.frames[self.idx])
-        self.idx += 1
-        if self.idx == len(self.frames):
-            self.idx = 0
-        self.cancel = self.after(self.delay, self.play)
-        
-    def update_image(self, filename):
-        img = Image.open(filename)
-        seq = []
-        try:
-            while 1:
-                seq.append(img.copy())
-                img.seek(len(seq))
-        except EOFError:
-            pass
-        try:
-            self.delay = img.info['duration']
-        except KeyError:
-            self.delay = 100
-        first = seq[0].convert('RGBA')
-        self.frames = [ImageTk.PhotoImage(first)]
-        
-        
+'''
 font_load = loadfont(".//fonts//TorontoSubwayRegular.ttf", True, False)
 
-root = Tk()
-root.attributes('-fullscreen', True)
-root.title("test for tk")
-print(font.families(root=root))
 
 
-anim = TestLabel(root, ".//images//animated//tv_collect_pepp.webp")
-anim.grid(row=0, column=5)
 
-def stop_anim():
-    print(type(anim))
-    anim.after_cancel(anim.cancel)
-    
-    
-def anim_replace():
-    global anim
-    if anim is not None:
-        anim.after(ms=0, func=anim.destroy())
-        anim = None
-    new_anim = TestLabel(root, ".//images//animated//tv_collected_pepp.gif")
-    new_anim.grid(row=0, column=5)
-    anim = new_anim
-    
-    
+GIF_pepp = ".//images//animated//tv_collected_pepp.gif"
+WEBP_pepp = ".//images//animated//tv_collect_pepp.webp"
 
-Button(root, text="stop", command=stop_anim).grid(row=1, column=1)
-Button(root, text="replace", command=anim_replace).grid(row=1, column=2)
-Label(root, text="This is a test of the font family", font=font.families(root=root)[-1]).grid(row=2, column=3)
-
-root.mainloop()
+'''
